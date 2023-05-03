@@ -1,3 +1,4 @@
+import 'package:money_tracker/pages/menu.dart';
 import 'package:money_tracker/widgets/drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -195,7 +196,12 @@ class _MyFormPageState extends State<MyFormPage> {
                                       'Deskripsi Transaksi: $_deskripsiTransaksi'),
                                   TextButton(
                                     onPressed: () {
-                                      Navigator.pop(context);
+                                      Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const MyHomePage(),
+                                          ));
                                     },
                                     child: Text('Kembali'),
                                   ),
