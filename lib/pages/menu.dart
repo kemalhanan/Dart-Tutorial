@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:money_tracker/pages/login.dart';
 import 'package:money_tracker/widgets/drawer.dart';
 import 'package:money_tracker/pages/form.dart';
+import 'package:money_tracker/pages/transaction.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
 
 class MyHomePage extends StatelessWidget {
   const MyHomePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>();
+
     return Scaffold(
       appBar: AppBar(
         // Set title aplikasi menjadi Money Tracker
@@ -48,12 +54,11 @@ class MyHomePage extends StatelessWidget {
                     child: InkWell(
                       // Area responsive terhadap sentuhan
                       onTap: () {
-                        // Memunculkan SnackBar ketika diklik
-                        ScaffoldMessenger.of(context)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(const SnackBar(
-                              content: Text(
-                                  "Kamu telah menekan tombol Lihat Riwayat Transaksi!")));
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const TransactionPage()),
+                        );
                       },
                       child: Container(
                         // Container untuk menyimpan Icon dan Text
@@ -115,12 +120,26 @@ class MyHomePage extends StatelessWidget {
                   Material(
                     color: Colors.green,
                     child: InkWell(
-                      onTap: () {
-                        ScaffoldMessenger.of(context)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(const SnackBar(
-                              content:
-                                  Text("Kamu telah menekan tombol Logout!")));
+                      onTap: () async {
+                        final response = await request.logout(
+                            // TODO: Ganti URL dan jangan lupa tambahkan trailing slash (/) di akhir URL!
+                            "https://django-tutorial.adaptable.app/auth/logout/");
+                        String message = response["message"];
+                        if (response['status']) {
+                          String uname = response["username"];
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text("$message Sampai jumpa, $uname."),
+                          ));
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const LoginPage()),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text("$message"),
+                          ));
+                        }
                       },
                       child: Container(
                         padding: const EdgeInsets.all(8),

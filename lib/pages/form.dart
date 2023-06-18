@@ -1,7 +1,10 @@
-import 'package:money_tracker/pages/menu.dart';
+import 'package:money_tracker/pages/transaction.dart';
 import 'package:money_tracker/widgets/drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
+import 'dart:convert' as convert;
 
 class MyFormPage extends StatefulWidget {
   const MyFormPage({super.key});
@@ -15,11 +18,13 @@ class _MyFormPageState extends State<MyFormPage> {
   String _namaTransaksi = "";
   String tipeTransaksi = 'Pengeluaran';
   List<String> listTipeTransaksi = ['Pengeluaran', 'Pemasukan'];
-  double jumlahTransaksi = 0;
+  int jumlahTransaksi = 0;
   String _deskripsiTransaksi = "";
 
   @override
   Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Form'),
@@ -109,13 +114,13 @@ class _MyFormPageState extends State<MyFormPage> {
                     // Menambahkan behavior saat jumlah diketik
                     onChanged: (String? value) {
                       setState(() {
-                        jumlahTransaksi = double.parse(value!);
+                        jumlahTransaksi = double.parse(value!) as int;
                       });
                     },
                     // Menambahkan behavior saat data disimpan
                     onSaved: (String? value) {
                       setState(() {
-                        jumlahTransaksi = double.parse(value!);
+                        jumlahTransaksi = double.parse(value!) as int;
                       });
                     },
                     // Validator sebagai validasi form
@@ -195,13 +200,39 @@ class _MyFormPageState extends State<MyFormPage> {
                                   Text(
                                       'Deskripsi Transaksi: $_deskripsiTransaksi'),
                                   TextButton(
-                                    onPressed: () {
-                                      Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const MyHomePage(),
+                                    onPressed: () async {
+                                      if (_formKey.currentState!.validate()) {
+                                        // Kirim ke Django dan tunggu respons
+                                        // TODO: Ganti URL dan jangan lupa tambahkan trailing slash (/) di akhir URL!
+                                        final response = await request.postJson(
+                                            "https://django-tutorial.adaptable.app/tracker/create-flutter/",
+                                            convert.jsonEncode(<String, String>{
+                                              'name': _namaTransaksi,
+                                              'type': tipeTransaksi,
+                                              'amount':
+                                                  jumlahTransaksi.toString(),
+                                              'description': _deskripsiTransaksi
+                                            }));
+                                        if (response['status'] == 'success') {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(const SnackBar(
+                                            content: Text(
+                                                "Transaksi baru berhasil disimpan!"),
                                           ));
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const TransactionPage()),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(const SnackBar(
+                                            content: Text(
+                                                "Terdapat kesalahan, silakan coba lagi."),
+                                          ));
+                                        }
+                                      }
                                     },
                                     child: Text('Kembali'),
                                   ),
